@@ -1,0 +1,811 @@
+<html>
+<head>
+<title>スリープ防止ツール</title>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=9">
+<HTA:APPLICATION
+    ID="NeverSleepApp"
+    APPLICATIONNAME="スリープ防止ツール"
+    SCROLL="no"
+    SINGLEINSTANCE="no"
+    BORDER="none"
+    CAPTION="no"
+    ICON="%SystemRoot%\System32\themecpl.dll"
+    CONTEXTMENU="no"
+    showInTaskbar="Yes"
+    windowState="normal"
+    WIDTH="948"
+    HEIGHT="606"
+/>
+<object id="HHCtrlMinimizeWindowObject" classid="clsid:adb880a6-d8ff-11cf-9377-00aa003b7a11">
+    <param name="command" value="minimize" />
+</object>
+<script type="text/javascript">
+function _jsMinWin() {
+    try {
+        window.focus();
+        HHCtrlMinimizeWindowObject.Click();
+    } catch (err) {
+        try {
+            var sh = new ActiveXObject("WScript.Shell");
+            sh.AppActivate(document.title);
+            sh.SendKeys("% ");
+            sh.SendKeys("n");
+        } catch (e2) {
+            alert("Minimize failed: " + (err.message || e2.message || "Unknown error"));
+        }
+    }
+}
+</script>
+<style>
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+body {
+    font-family: 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+    color: #1b3952;
+    background: #e7f1f9;
+    background: linear-gradient(to bottom, #e6f5ff 0%, #e9f6fd 42%, #eaf7eb 100%);
+    position: relative;
+}
+.bg, .bg-soft, .grid {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+}
+.grid {
+    background-image:
+        linear-gradient(rgba(106, 128, 154, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(106, 128, 154, 0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+}
+.halo {
+    position: absolute;
+    border-radius: 999px;
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=12);
+}
+#halo1 {
+    width: 407px;
+    height: 407px;
+    left: -98px;
+    top: -52px;
+    background: #c8e5ff;
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=12);
+    z-index: 1;
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=12);
+}
+#halo2 {
+    width: 216px;
+    height: 216px;
+    right: 22px;
+    bottom: 24px;
+    background: #efcf8c;
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=12);
+    z-index: 1;
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=12);
+}
+.shell {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    border-radius: 0;
+    overflow: hidden;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.window {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: #e7f3fb;
+    background: linear-gradient(to bottom, #e7f5ff 0%, #ebf7fd 44%, #ecf8e8 100%);
+    position: relative;
+    overflow: hidden;
+}
+.titlebar {
+    z-index: 5;
+    height: 34px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    background: rgba(255,255,255,0.60);
+    border-bottom: 1px solid rgba(184, 200, 216, 0.82);
+    box-shadow: 0 8px 18px rgba(119, 145, 169, 0.08), inset 0 1px 0 rgba(255,255,255,0.94);
+    cursor: move;
+    -ms-user-select: none;
+    z-index: 5;
+}
+.app-mark {
+    position: absolute;
+    left: 13px;
+    top: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(201,214,226,0.76);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 8px 18px rgba(95, 120, 146, 0.12);
+}
+.app-mark-inner {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    width: 12px;
+    height: 9px;
+    border-radius: 3px 3px 2px 2px;
+    background: #d7ebff;
+    border: 1px solid rgba(125,165,206,0.45);
+}
+.app-mark-stand {
+    position: absolute;
+    left: 8px;
+    top: 17px;
+    width: 7px;
+    height: 2px;
+    background: rgba(121,145,170,0.80);
+}
+.app-mark-palette {
+    position: absolute;
+    right: -1px;
+    top: -1px;
+    width: 8px;
+    height: 8px;
+    border: 1px solid rgba(255,255,255,0.86);
+    background: #ffffff;
+    overflow: hidden;
+}
+.p1, .p2, .p3, .p4 {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+}
+.p1 { left: 0; top: 0; background: #ff8d8d; }
+.p2 { right: 0; top: 0; background: #ffd86b; }
+.p3 { left: 0; bottom: 0; background: #7dd4ff; }
+.p4 { right: 0; bottom: 0; background: #9f8dff; }
+.titlebar-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    line-height: 34px;
+    text-align: center;
+    font-size: 12px;
+    color: #4a657f;
+    letter-spacing: 0.4px;
+}
+.win-controls {
+    position: absolute;
+    right: 11px;
+    top: 5px;
+}
+.win-btn {
+    float: left;
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+    border-radius: 9px;
+    text-align: center;
+    line-height: 24px;
+    color: #537089;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(194, 208, 220, 0.62);
+}
+.win-btn:hover {
+    background: rgba(232,236,241,0.88);
+    border-color: rgba(186,196,208,0.78);
+}
+#closeBtn { cursor: default; }
+#closeBtn:hover {
+    background: #e86b6b;
+    border-color: #de5a5a;
+    color: #ffffff;
+}
+.win-controls, .win-controls * {
+    cursor: default !important;
+}
+
+.content {
+    z-index: 3;
+    height: 100%;
+    padding: 44px 32px 14px;
+    box-sizing: border-box;
+    position: relative;
+}
+.panel {
+    width: 744px;
+    margin: 0 auto;
+    padding: 22px 0 0;
+}
+.head {
+    text-align: center;
+}
+.badge {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: transparent;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    visibility: hidden;
+}
+.title {
+    margin: 4px 0 10px;
+    font-size: 41px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #18364d;
+}
+.subtitle {
+    font-size: 12px;
+    color: #678198;
+    margin-bottom: 24px;
+}
+.main {
+    margin-top: 18px;
+}
+.control-card, .meta-card {
+    background: rgba(250,253,255,0.30);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 24px;
+    box-shadow: 0 12px 24px rgba(92, 117, 142, 0.08), inset 0 1px 0 rgba(255,255,255,0.34);
+}
+.control-card {
+    padding: 26px 30px 30px;
+    width: 680px;
+    margin: 0 auto;
+    background: rgba(250,253,255,0.40);
+    box-shadow: 0 18px 34px rgba(88, 114, 140, 0.16), inset 0 1px 0 rgba(255,255,255,0.34);
+}
+
+.status-label {
+    font-size: 12px;
+    color: #7289a0;
+    margin-bottom: 10px;
+}
+.status {
+    position: relative;
+    padding: 18px 22px;
+    border-radius: 18px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    background: rgba(255,255,255,0.80);
+    border: 1px solid rgba(214,220,228,0.60);
+    box-shadow: 0 10px 18px rgba(86, 111, 134, 0.08), inset 0 1px 0 rgba(255,255,255,0.40);
+}
+.status-dot {
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+    left: -2px;
+    width: 13px;
+    height: 13px;
+    margin-right: 14px;
+    border-radius: 50%;
+}
+.status-inner {
+    display: inline-block;
+    vertical-align: middle;
+}
+.running {
+    color: #146c58;
+    background: rgba(226,244,237,0.74);
+    border-color: rgba(177,216,200,0.56);
+}
+.running .status-dot {
+    background: #2bc78e;
+}
+.stopped {
+    color: #995959;
+    background: rgba(246,233,233,0.74);
+    border-color: rgba(228,199,199,0.56);
+}
+.stopped .status-dot {
+    background: #dc6a6a;
+}
+.error {
+    color: #9a6a0a;
+    background: rgba(255,247,232,0.68);
+    border-color: rgba(233,210,160,0.58);
+}
+.error .status-dot {
+    background: #e7b34f;
+}
+.actions {
+    margin-top: 38px;
+    text-align: center;
+}
+.btn {
+    display: inline-block;
+    min-width: 126px;
+    padding: 10px 16px;
+    margin: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(214,220,228,0.60);
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #23425f;
+    background: rgba(246,250,253,0.98);
+    box-shadow: 0 8px 16px rgba(76, 102, 129, 0.05), inset 0 1px 0 rgba(255,255,255,0.56);
+}
+.btn:hover {
+    filter: progid:DXImageTransform.Microsoft.Alpha(opacity=92);
+}
+.btn:active {
+    position: relative;
+    top: 1px;
+}
+.btn:disabled {
+    color: #8ea0b2;
+    background: rgba(229,236,242,0.78);
+    border-color: rgba(214,220,228,0.72);
+    box-shadow: none;
+    cursor: default;
+}
+.btn-start {
+    background: rgba(206,233,222,0.98);
+    border-color: rgba(255,255,255,0.26);
+    color: #0a5e4d;
+    position: relative;
+    left: -4px;
+}
+.btn-stop {
+    background: rgba(242,224,224,0.98);
+    border-color: rgba(255,255,255,0.26);
+    color: #974848;
+    position: relative;
+    left: 4px;
+}
+
+.btn-pause {
+    background: rgba(245,249,253,0.98);
+    border-color: rgba(170, 192, 216, 0.52);
+    color: #274c71;
+}
+
+.pause-wrap {
+    display: inline-block;
+    position: relative;
+}
+.pause-menu {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 48px;
+    width: 168px;
+    margin-left: -84px;
+    padding: 8px 0;
+    border-radius: 16px;
+    background: rgba(249,252,254,0.90);
+    border: 1px solid rgba(255,255,255,0.16);
+    box-shadow: 0 12px 24px rgba(76, 102, 129, 0.10), inset 0 1px 0 rgba(255,255,255,0.34);
+    z-index: 10;
+}
+.pause-item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #35506a;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+.pause-item:hover {
+    background: rgba(236,244,250,0.78);
+}
+.pause-item:disabled {
+    color: #97a8b8;
+    cursor: default;
+}
+
+.note-text {
+    margin-top: 30px;
+    color: #5f7a92;
+    font-size: 12px;
+    line-height: 2.22;
+}
+.meta-card {
+    margin-top: 16px;
+    text-align: center;
+    color: #688197;
+    font-size: 12px;
+}
+.meta-line {
+    margin-top: 42px;
+    text-align: center;
+    color: #688197;
+    font-size: 12px;
+}
+.author-line {
+    margin-top: 8px;
+    text-align: center;
+    color: #6f879b;
+    font-size: 12px;
+}
+</style>
+</head>
+<body>
+<div class="bg">
+    <div class="grid"></div>
+</div>
+
+<div class="shell">
+    <div class="window">
+        <div id="halo1" class="halo"></div>
+        <div id="halo2" class="halo"></div>
+        <div id="titlebar" class="titlebar">
+            <div class="app-mark">
+                <div class="app-mark-inner"></div>
+                <div class="app-mark-stand"></div>
+                <div class="app-mark-palette">
+                    <div class="p1"></div><div class="p2"></div><div class="p3"></div><div class="p4"></div>
+                </div>
+            </div>
+            <div class="titlebar-text">スリープ防止ツール</div>
+            <div class="win-controls">
+                <div id="minBtn" class="win-btn">-</div>
+                <div id="closeBtn" class="win-btn">×</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <div class="head">
+                    <div class="badge">システム常時起動 · BETA</div>
+                    <div class="title">スリープ防止ツール</div>
+                    <div class="subtitle">アクティブ状態を維持｜15 秒ごとに軽いアクティビティ信号を送信</div>
+                </div>
+
+                <div class="main">
+                    <div class="control-card">
+                        <div class="status-label">現在の実行状態：</div>
+                        <div id="status" class="status running"><span class="status-inner"><span id="statusDot" class="status-dot"></span><span id="statusText">状態：実行中</span></span></div>
+
+                        <div class="actions">
+                            <button id="startBtn" class="btn btn-start" disabled>▶ 開始</button>
+                            <div class="pause-wrap">
+                                <button id="pauseBtn" class="btn btn-pause">⏱ 一時停止予約</button>
+                                <div id="pauseMenu" class="pause-menu">
+                                    <button class="pause-item" onclick="scheduleAfterMinutes(30)">30 分後に停止</button>
+                                    <button class="pause-item" onclick="scheduleAfterMinutes(60)">1 時間後に停止</button>
+                                    <button class="pause-item" onclick="scheduleFixedPause(11,0)">11:00 に停止</button>
+                                    <button class="pause-item" onclick="promptPauseTime()">停止時刻を入力（HH:MM）</button>
+                                    <button id="cancelPauseBtn" class="pause-item" onclick="cancelScheduledPause()" disabled>予約停止を取り消す</button>
+                                </div>
+                            </div>
+                            <button id="stopBtn" class="btn btn-stop">■ 停止</button>
+                        </div>
+
+                        <div class="note-text">軽いキーボード操作を模擬してシステムのアクティブ状態を維持し、自動スリープ、画面オフ、ロックの発生を減らします。動作中は一定の間隔で軽いアクティビティ信号を送信し、通常は入力、閲覧、プレゼン、表示専用の利用、その他の日常操作にほとんど影響しません。</div>
+                    </div>
+                    <div class="meta-line" id="lastUpdate">初回起動時刻： 起動中...</div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="MinimizeWindow" id="MinimizeWindow" onclick="javascript:_jsMinWin();" />
+
+<script language="JavaScript">
+var shell = null;
+var initialRunTime = null;
+var timerId = null;
+var isRunning = false;
+var visualTimer = null;
+var visualTick = 0;
+var pauseTimeoutId = null;
+var pauseTargetTime = null;
+var pauseTargetLabel = "";
+
+var dragOn = false;
+var dragOffsetX = 0;
+var dragOffsetY = 0;
+
+var palette = [
+    [255, 186, 186],
+    [255, 212, 145],
+    [246, 231, 126],
+    [177, 227, 157],
+    [152, 207, 255],
+    [150, 229, 223],
+    [201, 166, 255]
+];
+
+function setStatus(mode, text) {
+    var status = document.getElementById("status");
+    var textNode = document.getElementById("statusText");
+    if (!status || !textNode) return;
+    status.className = "status " + mode;
+    textNode.innerHTML = text;
+}
+
+function lerp(a, b, t) {
+    return Math.round(a + (b - a) * t);
+}
+
+function mixColor(a, b, t) {
+    return "rgb(" + lerp(a[0], b[0], t) + "," + lerp(a[1], b[1], t) + "," + lerp(a[2], b[2], t) + ")";
+}
+
+function updateStatusDot() {
+    var dot = document.getElementById("statusDot");
+    if (!dot) return;
+    if (isRunning) {
+        var s = Math.sin(visualTick / 6);
+        var opacity = 72 + Math.round((s + 1) * 14);
+        var ring = 4 + Math.round((s + 1) * 3);
+        dot.style.backgroundColor = "#29c68e";
+        dot.style.filter = "alpha(opacity=" + opacity + ")";
+        dot.style.boxShadow = "0 0 0 " + ring + "px rgba(41,198,142,0.14), 0 0 " + (10 + ring) + "px rgba(41,198,142,0.32)";
+    } else {
+        dot.style.backgroundColor = "#dc6a6a";
+        dot.style.filter = "alpha(opacity=100)";
+        dot.style.boxShadow = "0 0 0 4px rgba(220,106,106,0.14)";
+    }
+}
+
+function setVisuals() {
+    var halo1 = document.getElementById("halo1");
+    var halo2 = document.getElementById("halo2");
+    if (!halo1 || !halo2) return;
+
+    if (!isRunning) {
+        updateStatusDot();
+        return;
+    }
+
+    var dx1 = Math.round(Math.sin(visualTick / 18) * 18);
+    var dy1 = Math.round(Math.cos(visualTick / 20) * 16);
+    var dx2 = Math.round(Math.cos(visualTick / 19) * 12);
+    var dy2 = Math.round(Math.sin(visualTick / 17) * 10);
+
+    halo1.style.left = (-86 + dx1) + "px";
+    halo1.style.top = (-46 + dy1) + "px";
+    halo2.style.right = (24 + dx2) + "px";
+    halo2.style.bottom = (24 + dy2) + "px";
+
+    var phase = Math.floor(visualTick / 36);
+    var blend = (visualTick % 36) / 36;
+    var c1a = palette[phase % palette.length];
+    var c1b = palette[(phase + 1) % palette.length];
+    var c2a = palette[(phase + 3) % palette.length];
+    var c2b = palette[(phase + 4) % palette.length];
+
+    halo1.style.backgroundColor = mixColor(c1a, c1b, blend);
+    halo2.style.backgroundColor = mixColor(c2a, c2b, blend);
+
+    updateStatusDot();
+    visualTick++;
+}
+
+
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function formatDateTimeLocalized(d) {
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日  " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+}
+
+function startVisualLoop() {
+    if (visualTimer) clearInterval(visualTimer);
+    visualTimer = setInterval(setVisuals, 110);
+}
+
+function sendKeepAwakeSignal() {
+    try {
+        if (!shell) shell = new ActiveXObject("WScript.Shell");
+        shell.SendKeys("{SCROLLLOCK}");
+        shell.SendKeys("{SCROLLLOCK}");
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString();
+        setStatus("running", "状態：実行中（最終信号：" + timeStr + "）");
+        return true;
+    } catch (e) {
+        setStatus("error", "状態：失敗（" + e.message + "）");
+        return false;
+    }
+}
+
+function startTimer() {
+    if (isRunning) return;
+    if (!initialRunTime) {
+        initialRunTime = new Date();
+        document.getElementById("lastUpdate").innerHTML = "初回起動時刻： " + formatDateTimeLocalized(initialRunTime);
+    }
+    if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+    }
+    if (!sendKeepAwakeSignal()) return;
+    isRunning = true;
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
+    timerId = setInterval(function() {
+        if (!isRunning) return;
+        if (!sendKeepAwakeSignal()) {
+            stopTimer();
+        }
+    }, 15000);
+    setTimeout(function() {
+        if (isRunning) sendKeepAwakeSignal();
+    }, 1200);
+    updateStatusDot();
+}
+
+function stopTimer() {
+    if (!isRunning) return;
+    isRunning = false;
+    if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+    }
+    var now = new Date();
+    setStatus("stopped", "状態：停止中（" + now.toLocaleTimeString() + "）");
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+    updateStatusDot();
+}
+
+
+function updatePauseButton() {
+    var btn = document.getElementById("pauseBtn");
+    var cancelBtn = document.getElementById("cancelPauseBtn");
+    if (!btn || !cancelBtn) return;
+    if (pauseTargetTime) {
+        btn.innerHTML = "⏱ 停止予定 " + pauseTargetLabel;
+        cancelBtn.disabled = false;
+    } else {
+        btn.innerHTML = "⏱ 一時停止予約";
+        cancelBtn.disabled = true;
+    }
+}
+
+function togglePauseMenu() {
+    var menu = document.getElementById("pauseMenu");
+    if (!menu) return;
+    menu.style.display = (menu.style.display == "block") ? "none" : "block";
+}
+
+function closePauseMenu() {
+    var menu = document.getElementById("pauseMenu");
+    if (menu) menu.style.display = "none";
+}
+
+function cancelScheduledPause() {
+    if (pauseTimeoutId) {
+        clearTimeout(pauseTimeoutId);
+        pauseTimeoutId = null;
+    }
+    pauseTargetTime = null;
+    pauseTargetLabel = "";
+    updatePauseButton();
+    closePauseMenu();
+}
+
+function schedulePauseAtDate(target) {
+    if (pauseTimeoutId) clearTimeout(pauseTimeoutId);
+    var delay = target.getTime() - new Date().getTime();
+    if (delay <= 0) {
+        target.setDate(target.getDate() + 1);
+        delay = target.getTime() - new Date().getTime();
+    }
+    pauseTargetTime = target;
+    var hh = target.getHours();
+    var mm = target.getMinutes();
+    pauseTargetLabel = (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+    pauseTimeoutId = setTimeout(function() {
+        pauseTimeoutId = null;
+        pauseTargetTime = null;
+        pauseTargetLabel = "";
+        stopTimer();
+        updatePauseButton();
+    }, delay);
+    updatePauseButton();
+    closePauseMenu();
+}
+
+
+function scheduleAfterMinutes(minutes) {
+    var target = new Date();
+    target = new Date(target.getTime() + minutes * 60000);
+    target.setSeconds(0);
+    target.setMilliseconds(0);
+    schedulePauseAtDate(target);
+}
+function scheduleFixedPause(h, min) {
+    var target = new Date();
+    target.setHours(h);
+    target.setMinutes(min);
+    target.setSeconds(0);
+    target.setMilliseconds(0);
+    schedulePauseAtDate(target);
+}
+
+function promptPauseTime() {
+    var input = prompt("停止時刻を入力してください（24 時間形式 HH:MM）", pauseTargetLabel || "22:00");
+    if (input === null) return;
+    input = input.replace(/^\s+|\s+$/g, "");
+    var m = /^(\d{1,2})\:(\d{2})$/.exec(input);
+    if (!m) {
+        alert("時刻の形式が無効です。HH:MM（例：22:30）で入力してください");
+        return;
+    }
+    var h = parseInt(m[1], 10);
+    var min = parseInt(m[2], 10);
+    if (h < 0 || h > 23 || min < 0 || min > 59) {
+        alert("時刻の範囲が無効です。00:00 から 23:59 を入力してください");
+        return;
+    }
+    var target = new Date();
+    target.setHours(h);
+    target.setMinutes(min);
+    target.setSeconds(0);
+    target.setMilliseconds(0);
+    schedulePauseAtDate(target);
+}
+
+function beginDrag() {
+    dragOn = true;
+    dragOffsetX = window.event.screenX - window.screenLeft;
+    dragOffsetY = window.event.screenY - window.screenTop;
+    return false;
+}
+
+function moveDrag() {
+    if (!dragOn) return;
+    window.moveTo(window.event.screenX - dragOffsetX, window.event.screenY - dragOffsetY);
+}
+
+function endDrag() {
+    dragOn = false;
+}
+
+window.onload = function() {
+    try {
+        if (window.resizeTo) window.resizeTo(962, 620);
+    } catch (e) {}
+    document.getElementById("startBtn").onclick = function() {
+        startTimer();
+    };
+    document.getElementById("pauseBtn").onclick = function() { window.event.cancelBubble = true; togglePauseMenu(); return false; };
+    document.getElementById("stopBtn").onclick = stopTimer;
+    document.getElementById("minBtn").onclick = function() {
+        _jsMinWin();
+    };
+    document.getElementById("closeBtn").onclick = function() { window.close(); };
+    document.body.onclick = function() { closePauseMenu(); };
+    document.getElementById("pauseMenu").onclick = function() { window.event.cancelBubble = true; };
+    document.getElementById("pauseBtn").onmousedown = function() { window.event.cancelBubble = true; };
+    document.getElementById("pauseBtn").onmouseup = function() { window.event.cancelBubble = true; };
+    document.getElementById("titlebar").onmousedown = beginDrag;
+    document.onmousemove = moveDrag;
+    document.onmouseup = endDrag;
+    updatePauseButton();
+    startVisualLoop();
+    startTimer();
+};
+</script>
+</body>
+</html>
